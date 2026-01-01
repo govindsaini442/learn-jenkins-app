@@ -30,7 +30,7 @@ pipeline {
             steps {
                 sh '''
                     mkdir -p jest-results
-                    npm test -- --watch=false
+                    npm test -- --watch=false --reporters=default --reporters=jest-junit
                 '''
             }
         }
@@ -38,7 +38,7 @@ pipeline {
         stage('E2E') {
             agent {
                 docker {
-                    image 'mcr.microsoft.com/playwright:v1.39.0-jammy'
+                    image 'mcr.microsoft.com/playwright:v1.57.0-jammy'
                     reuseNode true
                 }
             }
