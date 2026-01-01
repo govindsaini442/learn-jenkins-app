@@ -2,9 +2,8 @@ pipeline {
     agent any
 
     stages {
-        
 
-        stage('Build') {
+        stage('Install & Build') {
             agent {
                 docker {
                     image 'node:18-alpine'
@@ -13,16 +12,13 @@ pipeline {
             }
             steps {
                 sh '''
-                    ls -la
                     node --version
                     npm --version
                     npm ci
                     npm run build
-                    ls -la
                 '''
             }
         }
-        
 
         stage('Test') {
             agent {
@@ -31,11 +27,10 @@ pipeline {
                     reuseNode true
                 }
             }
-
             steps {
                 sh '''
-                    #test -f build/index.html
-                    npm test
+                    mkdir -p jest-results
+                    npm test -- --watch=false
                 '''
             }
         }
@@ -47,11 +42,11 @@ pipeline {
                     reuseNode true
                 }
             }
-
             steps {
                 sh '''
+                    npm ci
                     npm install serve
-                    node_modules/.bin/serve -s build &
+                    npx serve -s build -l 3000 &
                     sleep 10
                     npx playwright test --reporter=html
                 '''
@@ -61,8 +56,16 @@ pipeline {
 
     post {
         always {
-            junit 'jest-results/junit.xml'
-            publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'playwright-report', reportFiles: 'index.html', reportName: 'Playwright HTML Report', reportTitles: '', useWrapperFileDirectly: true])
+            junit allowEmptyResults: true, testResults: 'jest-results/junit.xml'
+
+            publishHTML([
+                allowMissing: true,
+                alwaysLinkToLastBuild: true,
+                keepAll: true,
+                reportDir: 'playwright-report',
+                reportFiles: 'index.html',
+                reportName: 'Playwright HTML Report'
+            ])
         }
     }
 }
