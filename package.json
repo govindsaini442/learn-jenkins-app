@@ -36,10 +36,11 @@
     ]
   },
   "devDependencies": {
-    "@playwright/test": "^1.39.0",
-    "@types/node": "^20.8.6",
-    "jest-junit": "^16.0.0"
-  },
+  "@playwright/test": "^1.39.0",
+  "@types/node": "^20.8.6",
+  "jest-junit": "^16.0.0",
+  "typescript": "4.9.5"
+},
   "jest-junit": {
     "suiteName": "jest tests",
     "outputDirectory": "test-results",
