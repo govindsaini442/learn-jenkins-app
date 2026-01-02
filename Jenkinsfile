@@ -1,6 +1,5 @@
 pipeline {
     agent any
-
     stages {
         stage('Install & Build') {
             agent {
@@ -43,7 +42,6 @@ pipeline {
         }
     }
 }
-
                 stage('E2E') {
                     agent {
                         docker {
@@ -74,7 +72,6 @@ pipeline {
                 }
             }
         }
-
         stage('Deploy') {
             agent {
                 docker {
