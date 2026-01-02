@@ -34,8 +34,8 @@ pipeline {
 
                     steps {
                         sh '''
-                            #test -f build/index.html
-                            npm test
+                            mkdir -p jest-results
+                            npm test -- --watch=false --reporters=default --reporters=jest-junit
                         '''
                     }
                     post {
