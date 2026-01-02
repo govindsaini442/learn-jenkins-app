@@ -2,7 +2,6 @@ pipeline {
     agent any
 
     stages {
-
         stage('Install & Build') {
             agent {
                 docker {
@@ -19,30 +18,31 @@ pipeline {
                 '''
             }
         }
-
         stage('Tests') {
             parallel {
-
                 stage('Unit tests') {
-                    agent {
-                        docker {
-                            image 'node:18-alpine'
-                            reuseNode true
-                        }
-                    }
-                    steps {
-                        sh '''
-                            mkdir -p jest-results
-                            npm test -- --watch=false --reporters=jest-junit
-                            ls -la jest-results
-                        '''
-                    }
-                    post {
-                        always {
-                            junit 'jest-results/junit.xml'
-                        }
-                    }
-                }
+    agent {
+        docker {
+            image 'node:18-alpine'
+            reuseNode true
+        }
+    }
+    steps {
+        sh '''
+            export JEST_JUNIT_OUTPUT_DIR=jest-results
+            export JEST_JUNIT_OUTPUT_NAME=junit.xml
+
+            mkdir -p jest-results
+            npm test -- --watch=false
+            ls -la jest-results
+        '''
+    }
+    post {
+        always {
+            junit 'jest-results/junit.xml'
+        }
+    }
+}
 
                 stage('E2E') {
                     agent {
