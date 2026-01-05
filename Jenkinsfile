@@ -15,7 +15,7 @@ pipeline {
             }
             steps {
                 sh '''
-                    echo "small changes"
+                    echo "small Change"
                     node --version
                     npm --version
                     npm ci
@@ -71,7 +71,7 @@ pipeline {
                                 keepAll: true,
                                 reportDir: 'playwright-report',
                                 reportFiles: 'index.html',
-                                reportName: 'Playwright HTML Report'
+                                reportName: 'Playwright Local Report'
                             ])
                         }
                     }
@@ -92,9 +92,36 @@ pipeline {
                     echo "Deploying to production. Site ID: $NETLIFY_SITE_ID"
                     node_modules/.bin/netlify status
                     node_modules/.bin/netlify deploy --dir=build --prod
-                    
                 '''
             }
         }
+        stage('Prod E2E') {
+                    agent {
+                        docker {
+                            image 'mcr.microsoft.com/playwright:v1.57.0-jammy'
+                            reuseNode true
+                        }
+                    }
+                    environment {
+                        CI_ENVIRONMENT_URL = https://legendary-pony-5bf8b7-1.netlify.app
+                    }
+                    steps {
+                        sh '''
+                            npx playwright test --reporter=html
+                        '''
+                    }
+                    post {
+                        always {
+                            publishHTML([
+                                allowMissing: false,
+                                alwaysLinkToLastBuild: true,
+                                keepAll: true,
+                                reportDir: 'playwright-report',
+                                reportFiles: 'index.html',
+                                reportName: 'Playwright E2E Report'
+                            ])
+                        }
+                    }
+                }
     }
 }
