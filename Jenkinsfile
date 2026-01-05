@@ -103,7 +103,7 @@ pipeline {
                         }
                     }
                     environment {
-                        CI_ENVIRONMENT_URL = https://legendary-pony-5bf8b7-1.netlify.app
+                        CI_ENVIRONMENT_URL = 'https://legendary-pony-5bf8b7-1.netlify.app'
                     }
                     steps {
                         sh '''
