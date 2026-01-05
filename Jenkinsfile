@@ -95,6 +95,13 @@ pipeline {
                 '''
             }
         }
+        stage('Approval for deployment before production') {
+            steps {
+                timeout(time: 1, unit: 'HOURS') {
+                 input 'Ready to Deploy to Prod?'
+                }
+            }
+        }
         stage('Deploy to prod') {
             agent {
                 docker {
