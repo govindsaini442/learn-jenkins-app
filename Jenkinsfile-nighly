@@ -1,17 +1,9 @@
 pipeline {
     agent any
     stages {
-        stage('Docker'){
+        stage('Docker image build'){
             steps{
                 sh 'docker build -t my-playwright .'
-            }
-        }
-        stage('Build Docker Image') {
-            agent {
-                docker {
-                    image 'node:18-alpine'
-                    reuseNode true
-                }
             }
         }
     }
