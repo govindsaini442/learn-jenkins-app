@@ -122,7 +122,7 @@ pipeline {
         stage('Deploy to prod') {
             agent {
                 docker {
-                    image 'node:18-alpine'
+                    image 'mcr.microsoft.com/playwright:v1.57.0-jammy'
                     reuseNode true
                 }
             }
