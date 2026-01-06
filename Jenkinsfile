@@ -6,7 +6,7 @@ pipeline {
         NETLIFY_AUTH_TOKEN = credentials('netlify-token')
     }
     stages {
-        stage('Install & Build') {
+        stage('Build') {
             agent {
                 docker {
                     image 'node:18-alpine'
@@ -26,28 +26,28 @@ pipeline {
         stage('Tests') {
             parallel {
                 stage('Unit tests') {
-    agent {
-        docker {
-            image 'node:18-alpine'
-            reuseNode true
-        }
-    }
-    steps {
-        sh '''
-            export JEST_JUNIT_OUTPUT_DIR=jest-results
-            export JEST_JUNIT_OUTPUT_NAME=junit.xml
+        agent {
+            docker {
+                image 'node:18-alpine'
+                reuseNode true
+            }
+      }
+        steps {
+            sh '''
+                export JEST_JUNIT_OUTPUT_DIR=jest-results
+                export JEST_JUNIT_OUTPUT_NAME=junit.xml
 
-            mkdir -p jest-results
-            npm test -- --watch=false
-            ls -la jest-results
-        '''
-    }
-    post {
+                mkdir -p jest-results
+                npm test -- --watch=false
+                ls -la jest-results
+            '''
+        }
+        post {
         always {
             junit 'jest-results/junit.xml'
+            }
         }
     }
-}
         stage('E2E') {
             agent {
                 docker {
@@ -78,42 +78,30 @@ pipeline {
                 }
             }
         }
-        stage('Deploy to stage') {
+        stage('Deploy staging') {
             agent {
                 docker {
                     image 'node:18-alpine'
                     reuseNode true
                 }
             }
+
+            environment {
+                CI_ENVIRONMENT_URL = 'STAGING_URL_TO_BE_SET'
+            }
+
             steps {
                 sh '''
-                    npm install netlify-cli@20.1.1 node-jq
+                    npm install netlify-cli node-jq
                     node_modules/.bin/netlify --version
-                    echo "Deploying to Staging. Site ID: $NETLIFY_SITE_ID"
+                    echo "Deploying to staging. Site ID: $NETLIFY_SITE_ID"
                     node_modules/.bin/netlify status
                     node_modules/.bin/netlify deploy --dir=build --json > deploy-output.json
+                    CI_ENVIRONMENT_URL=$(node_modules/.bin/node-jq -r '.deploy_url' deploy-output.json)
+                    npx playwright test  --reporter=html
                 '''
-                script{
-                env.STAGING_URL = sh(script:"node_modules/.bin/node-jq -r '.deploy_url' deploy-output.json",returnStdout: true)
             }
-            }
-        }
-        stage('Stage E2E') {
-                    agent {
-                        docker {
-                            image 'mcr.microsoft.com/playwright:v1.57.0-jammy'
-                            reuseNode true
-                        }
-                    }
-                    environment {
-                        CI_ENVIRONMENT_URL = "${env.STAGING_URL}"
-                    }
-                    steps {
-                        sh '''
-                            npx playwright test --reporter=html
-                        '''
-                    }
-                    post {
+            post {
                         always {
                             publishHTML([
                                 allowMissing: false,
@@ -125,7 +113,7 @@ pipeline {
                             ])
                         }
                     }
-                }
+        }
         stage('Approval') {
             steps {
                 timeout(time: 1, unit: 'HOURS') {
@@ -140,32 +128,21 @@ pipeline {
                     reuseNode true
                 }
             }
+            environment {
+                CI_ENVIRONMENT_URL = 'https://legendary-pony-5bf8b7-1.netlify.app'
+            }
             steps {
                 sh '''
+                    node --version
                     npm install netlify-cli@20.1.1
                     node_modules/.bin/netlify --version
                     echo "Deploying to production. Site ID: $NETLIFY_SITE_ID"
                     node_modules/.bin/netlify status
                     node_modules/.bin/netlify deploy --dir=build --prod
+                    npx playwright test  --reporter=html
                 '''
             }
-        }
-        stage('Prod E2E') {
-                    agent {
-                        docker {
-                            image 'mcr.microsoft.com/playwright:v1.57.0-jammy'
-                            reuseNode true
-                        }
-                    }
-                    environment {
-                        CI_ENVIRONMENT_URL = 'https://legendary-pony-5bf8b7-1.netlify.app'
-                    }
-                    steps {
-                        sh '''
-                            npx playwright test --reporter=html
-                        '''
-                    }
-                    post {
+            post {
                         always {
                             publishHTML([
                                 allowMissing: false,
@@ -176,7 +153,7 @@ pipeline {
                                 reportName: 'Prod E2E Report'
                             ])
                         }
-                    }
                 }
+        }
     }
 }
